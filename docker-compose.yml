@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  go-trust-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: docker-go-trust-service:latest
+    container_name: go-trust-service
+    ports:
+      - "6001:6001"
+    environment:
+      - LOG_LEVEL=debug
+      - SERVICE_PORT=6001
+      - SERVICE_HOST=0.0.0.0
+      - FREQUENCY=300 
+    volumes:
+      - ./config/pipeline.yaml:/app/pipeline.yaml:ro
+      - ./config/config.example.yaml:/etc/go-trust/config.yaml:ro
+      - go-trust-service-cache:/tmp/tsl-cache
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:6001/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  go-trust-service-cache:
+    driver: local
